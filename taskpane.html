@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>EncoreAI Task Pane Add-in</title>
+
+    <!-- Office JavaScript API -->
+    <script type="text/javascript" src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+
+    <!-- For more information on Fluent UI, visit https://developer.microsoft.com/fluentui#/. -->
+    <link rel="stylesheet" href="https://res-1.cdn.office.net/files/fabric-cdn-prod_20230815.002/office-ui-fabric-core/11.1.0/css/fabric.min.css"/>
+
+    <!-- Template styles -->
+    <link href="taskpane.css" rel="stylesheet" type="text/css" />
+    <!-- for webhosting -->
+    <script type="text/javascript" src="taskpane.js"></script>
+</head>
+
+
+<body class="ms-font-m ms-welcome ms-Fabric">
+    <header class="ms-welcome__header ms-bgColor-neutralLighter">
+        <!-- <img width="90" height="90" src="../../assets/logo-filled.png" alt="Contoso" title="Contoso" /> -->
+        <!-- <h1 class="ms-font-su">AI Assistant</h1> -->
+        <p id="status" style="color: #0078d4; font-weight: bold;">Initializing...</p>
+        <div id="settings-area" style="padding: 10px; border-bottom: 1px solid #ccc; width: 100%;">
+            <label for="api-key-input" style="font-size: 12px;">Gemini API Key:</label>
+            <input type="password" id="api-key-input" placeholder="Paste your key here" style="width: 80%; margin-bottom: 5px;">
+            <button id="save-key-btn" class="ms-Button ms-Button--small">
+                <span class="ms-Button-label">Save Key</span>
+            </button>
+        </div>
+    </header>
+
+    <main id="app-body" class="ms-welcome__main" style="display: none;">
+                
+        <button id="run" class="ms-Button">
+            <span class="ms-Button-label">Analyze Email</span>
+        </button>
+
+        <div id="suggestion-container" style="width: 100%; display: flex; justify-content: center;">
+            <div id="suggestion">AI output will appear here...</div>
+        </div>
+        <button id="insert-btn" class="ms-Button" style="display:none; margin-top: 10px; background-color: #107c10; color: white; border: none; padding: 10px; cursor: pointer;">
+            <span class="ms-Button-label">Insert into Reply</span>
+        </button>
+    </main>
+</body>
+
+</html>
