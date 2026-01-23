@@ -80,8 +80,9 @@ async function handleReadMode() {
         suggestionDiv.innerText = responseText;
         statusIndicator.innerText = "Summary completed.";
       } catch (error) {
-        // statusIndicator.innerText = "Failed to summarize.";
-        statusIndicator.innerText = error.message;
+        statusIndicator.innerText = "Failed to summarize.";
+        // statusIndicator.innerText = error.message;
+        suggestionDiv.innerText = error.message;
         console.error(error);
       }
     }
@@ -111,8 +112,9 @@ async function handleReplyMode() {
         statusIndicator.innerText = "Suggestion ready.";
         insertBtn.style.display = "block"; // Show the button to insert text
       } catch (error) {
-        // statusIndicator.innerText = "Failed to generate reply.";
-        statusIndicator.innerText = error.message;
+        statusIndicator.innerText = "Failed to generate reply.";
+        // statusIndicator.innerText = error.message;
+        suggestionDiv.innerText = error.message;
         console.error(error);
       }
     }
