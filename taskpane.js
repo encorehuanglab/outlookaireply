@@ -1,179 +1,141 @@
-/* * Global variable to store the AI suggestion 
- * for insertion into the email body later.
- */
-let currentAiSuggestion = "";
+let geminiResult = "";
+let chatgptResult = "";
+let currentProvider = "gemini";
+let isComposeMode = false;
 
 Office.onReady((info) => {
-  if (info.host === Office.HostType.Outlook) {
-    document.getElementById("app-body").style.display = "flex";
-
-    // Set up Save Key button
-    document.getElementById("save-key-btn").onclick = saveApiKey;
-    
-    // Pre-fill input if key exists
-    const savedKey = localStorage.getItem("gemini_api_key");
-    if (savedKey) {
-        document.getElementById("api-key-input").value = savedKey;
+    if (info.host === Office.HostType.Outlook) {
+        const body = document.getElementById("app-body");
+        if (body) body.style.display = "flex";
+        
+        setupTabs();
+        setupKeySaving();
+        loadKeys();
+        initApp();
     }
-
-
-    initApp();
-  }
 });
 
-function saveApiKey() {
-    const key = document.getElementById("api-key-input").value;
-    if (key) {
-        localStorage.setItem("gemini_api_key", key);
-        document.getElementById("status").innerText = "API Key saved locally!";
-    } else {
-        alert("Please enter a valid key.");
+function setupTabs() {
+    const gBtn = document.getElementById("tab-gemini");
+    const cBtn = document.getElementById("tab-chatgpt");
+    const gSet = document.getElementById("settings-gemini");
+    const cSet = document.getElementById("settings-chatgpt");
+    const gCont = document.getElementById("content-gemini");
+    const cCont = document.getElementById("content-chatgpt");
+
+    if (gBtn && cBtn) {
+        gBtn.onclick = () => {
+            currentProvider = "gemini";
+            updateTabUI(gBtn, cBtn, gSet, cSet, gCont, cCont);
+        };
+        cBtn.onclick = () => {
+            currentProvider = "chatgpt";
+            updateTabUI(cBtn, gBtn, cSet, gSet, cCont, gCont);
+        };
     }
 }
 
-/**
- * Detects whether the user is in Read mode or Compose (Reply) mode
- * and initializes the UI buttons and logic accordingly.
- */
+function updateTabUI(activeBtn, inBtn, activeSet, inSet, activeCont, inCont) {
+    activeBtn.classList.add("active");
+    inBtn.classList.remove("active");
+    activeSet.style.display = "block";
+    inSet.style.display = "none";
+    activeCont.style.display = "block";
+    inCont.style.display = "none";
+    document.getElementById("key-status").innerText = ""; // Clear status on tab switch
+    updateInsertBtn();
+}
+
+function showKeySaved() {
+    const status = document.getElementById("key-status");
+    status.innerText = "Key Saved Locally!";
+    setTimeout(() => { status.innerText = ""; }, 3000);
+}
+
+function setupKeySaving() {
+    const gSave = document.getElementById("save-gemini-btn");
+    const cSave = document.getElementById("save-chatgpt-btn");
+
+    if (gSave) {
+        gSave.onclick = () => {
+            localStorage.setItem("gemini_key", document.getElementById("gemini-key-input").value);
+            showKeySaved();
+        };
+    }
+    if (cSave) {
+        cSave.onclick = () => {
+            localStorage.setItem("chatgpt_key", document.getElementById("chatgpt-key-input").value);
+            showKeySaved();
+        };
+    }
+}
+
+function loadKeys() {
+    const gIn = document.getElementById("gemini-key-input");
+    const cIn = document.getElementById("chatgpt-key-input");
+    if (gIn) gIn.value = localStorage.getItem("gemini_key") || "";
+    if (cIn) cIn.value = localStorage.getItem("chatgpt_key") || "";
+}
+
 function initApp() {
-  const item = Office.context.mailbox.item;
-  const runBtn = document.getElementById("run");
-  const statusIndicator = document.getElementById("status");
-  const insertBtn = document.getElementById("insert-btn");
+    const item = Office.context.mailbox.item;
+    isComposeMode = !!item.body.setSelectedDataAsync;
+    document.getElementById("status").innerText = isComposeMode ? "Compose Mode" : "Read Mode";
 
-  // Check if the current context allows setting data (Compose Mode)
-  if (item.body.setSelectedDataAsync) {
-    /* --- COMPOSE / REPLY MODE --- */
-    statusIndicator.innerText = "Reply mode detected.";
-    runBtn.innerText = "Generate AI Reply";
-    runBtn.onclick = handleReplyMode;
-    
-    // Hide insert button until a suggestion is generated
-    insertBtn.style.display = "none"; 
-    insertBtn.onclick = insertToEmail;
-  } else {
-    /* --- READ MODE --- */
-    statusIndicator.innerText = "Read mode detected.";
-    runBtn.innerText = "Summarize & Translate";
-    runBtn.onclick = handleReadMode;
-    insertBtn.style.display = "none";
-  }
+    document.getElementById("run").onclick = () => {
+        const prompt = isComposeMode ? "Suggest a reply:" : "Summarize this and translate to traditional Chinese:";
+        startAI(prompt);
+    };
+
+    document.getElementById("insert-btn").onclick = () => {
+        const text = (currentProvider === "gemini") ? geminiResult : chatgptResult;
+        Office.context.mailbox.item.body.setSelectedDataAsync(text, { coercionType: Office.CoercionType.Text });
+    };
 }
 
-/**
- * Handles Logic for Read Mode:
- * Prompt: Summarize and translate to Traditional Chinese.
- */
-async function handleReadMode() {
-  const statusIndicator = document.getElementById("status");
-  const suggestionDiv = document.getElementById("suggestion");
-  
-  statusIndicator.innerText = "Summarizing email...";
-  suggestionDiv.innerText = "Processing...";
+async function startAI(prompt) {
+    const box = document.getElementById(`suggestion-${currentProvider}`);
+    box.classList.remove("result-mode");
+    box.innerText = "Thinking...";
+    document.getElementById("insert-btn").style.display = "none";
 
-  Office.context.mailbox.item.body.getAsync(Office.CoercionType.Text, async (result) => {
-    if (result.status === Office.AsyncResultStatus.Succeeded) {
-      try {
-        const prompt = "Please breif summary the email and translate to traditional Chinese";
-        const responseText = await callGeminiAPI(result.value, prompt);
-        
-        suggestionDiv.innerText = responseText;
-        statusIndicator.innerText = "Summary completed.";
-      } catch (error) {
-        statusIndicator.innerText = "Failed to summarize.";
-        // statusIndicator.innerText = error.message;
-        suggestionDiv.innerText = error.message;
-        console.error(error);
-      }
-    }
-  });
+    Office.context.mailbox.item.body.getAsync(Office.CoercionType.Text, async (result) => {
+        try {
+            const response = (currentProvider === "gemini") ? 
+                await callGemini(result.value, prompt) : await callChatGPT(result.value, prompt);
+            
+            if (currentProvider === "gemini") geminiResult = response;
+            else chatgptResult = response;
+
+            box.classList.add("result-mode");
+            box.innerText = response;
+            updateInsertBtn();
+        } catch (e) {
+            box.innerText = "Error: " + e.message;
+        }
+    });
 }
 
-/**
- * Handles Logic for Reply Mode:
- * Prompt: Suggest a brief, polite reply.
- */
-async function handleReplyMode() {
-  const statusIndicator = document.getElementById("status");
-  const suggestionDiv = document.getElementById("suggestion");
-  const insertBtn = document.getElementById("insert-btn");
-
-  statusIndicator.innerText = "Generating suggestion...";
-  suggestionDiv.innerText = "Processing...";
-
-  Office.context.mailbox.item.body.getAsync(Office.CoercionType.Text, async (result) => {
-    if (result.status === Office.AsyncResultStatus.Succeeded) {
-      try {
-        const prompt = "Please revise or suggest a brief, polite reply to this email";
-        const responseText = await callGeminiAPI(result.value, prompt);
-        
-        currentAiSuggestion = responseText;
-        suggestionDiv.innerText = currentAiSuggestion;
-        statusIndicator.innerText = "Suggestion ready.";
-        insertBtn.style.display = "block"; // Show the button to insert text
-      } catch (error) {
-        statusIndicator.innerText = "Failed to generate reply.";
-        // statusIndicator.innerText = error.message;
-        suggestionDiv.innerText = error.message;
-        console.error(error);
-      }
-    }
-  });
+function updateInsertBtn() {
+    const res = (currentProvider === "gemini") ? geminiResult : chatgptResult;
+    document.getElementById("insert-btn").style.display = (isComposeMode && res) ? "block" : "none";
 }
 
-/**
- * Inserts the stored AI suggestion into the current email body.
- */
-function insertToEmail() {
-  if (!currentAiSuggestion) return;
-
-  Office.context.mailbox.item.body.setSelectedDataAsync(
-    currentAiSuggestion,
-    { coercionType: Office.CoercionType.Text },
-    (result) => {
-      if (result.status === Office.AsyncResultStatus.Succeeded) {
-        document.getElementById("status").innerText = "Successfully inserted!";
-      } else {
-        console.error("Insertion failed: " + result.error.message);
-      }
-    }
-  );
+async function callGemini(text, prompt) {
+    const key = localStorage.getItem("gemini_key");
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`;
+    const res = await fetch(url, { method: "POST", body: JSON.stringify({ contents: [{ parts: [{ text: prompt + "\n" + text }] }] }) });
+    const data = await res.json();
+    return data.candidates[0].content.parts[0].text;
 }
 
-/**
- * Core function to communicate with the Google Gemini API.
- * Uses gemini-2.0-flash for high speed and low latency.
- */
-async function callGeminiAPI(emailText, systemPrompt) {
-  // const API_KEY = "your_api_key_here"; // Replace with your actual API key or retrieve from secure storage
-  // Retrieve the key from local storage instead of hardcoding it
-  const API_KEY = localStorage.getItem("gemini_api_key");
-  if (!API_KEY) {
-      throw new Error("API Key not found. Please enter it in settings.");
-  }
-  // Updated to the latest stable flash model (2.0)
-  const MODEL = "gemini-2.5-flash"; 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${API_KEY}`;
-
-  const response = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      contents: [{
-        parts: [{
-          text: `${systemPrompt}\n\nEmail Content:\n${emailText}`
-        }]
-      }]
-    })
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error.message || "API Request Failed");
-  }
-
-  const data = await response.json();
-  
-  // Extract text from Gemini response structure
-  return data.candidates[0].content.parts[0].text;
+async function callChatGPT(text, prompt) {
+    const key = localStorage.getItem("chatgpt_key");
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${key}` },
+        body: JSON.stringify({ model: "gpt-4o-mini", messages: [{ role: "user", content: prompt + "\n" + text }] })
+    });
+    const data = await res.json();
+    return data.choices[0].message.content;
 }
