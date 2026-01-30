@@ -82,6 +82,8 @@ function initApp() {
     isComposeMode = !!item.body.setSelectedDataAsync;
     document.getElementById("status").innerText = isComposeMode ? "Compose Mode" : "Read Mode";
 
+    document.getElementById("run").innerText = isComposeMode ? "Suggest Reply" : "Summarize & Translate";
+
     document.getElementById("run").onclick = () => {
         const prompt = isComposeMode ? "Suggest a reply:" : "Summarize this and translate to traditional Chinese:";
         startAI(prompt);
