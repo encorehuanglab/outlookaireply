@@ -80,12 +80,12 @@ function loadKeys() {
 function initApp() {
     const item = Office.context.mailbox.item;
     isComposeMode = !!item.body.setSelectedDataAsync;
-    document.getElementById("status").innerText = isComposeMode ? "Compose Mode" : "Read Mode";
-
+    // document.getElementById("status").innerText = isComposeMode ? "Compose Mode" : "Read Mode";
+    
     document.getElementById("run").innerText = isComposeMode ? "Suggest Reply" : "Summarize & Translate";
 
     document.getElementById("run").onclick = () => {
-        const prompt = isComposeMode ? "Suggest a reply:" : "Summarize this and translate to traditional Chinese:";
+        const prompt = isComposeMode ? "Suggest a reply:" : "Summarize this and translate to Traditional Chinese:";
         startAI(prompt);
     };
 
