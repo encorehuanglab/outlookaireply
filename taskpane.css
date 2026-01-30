@@ -15,9 +15,9 @@
 
 .status-text { color: #0078d4; font-weight: bold; margin-bottom: 5px; }
 .settings-group { width: 100%; }
-.key-input-group { display: flex; flex-direction: column; gap: 5px; width: 100%; }
-.key-input-group input { padding: 8px; border: 1px solid #ccc; box-sizing: border-box; }
-.key-input-group button { padding: 5px; cursor: pointer; background: #fff; border: 1px solid #0078d4; color: #0078d4; font-size: 11px; }
+.key-input-group { display: flex; flex-direction: row; gap: 5px; width: 100%; }
+.key-input-group input { padding: 8px; border: 1px solid #ccc; box-sizing: border-box; flex: 1; }
+.key-input-group button { padding: 8px; cursor: pointer; background: #fff; border: 1px solid #0078d4; color: #0078d4; font-size: 11px; white-space: nowrap; }
 
 #run { width: 90%; margin: 20px 0; }
 #suggestion-container { width: 100%; }
