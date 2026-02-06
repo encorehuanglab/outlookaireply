@@ -85,7 +85,7 @@ function initApp() {
     document.getElementById("run").innerText = isComposeMode ? "Suggest Reply" : "Summarize & Translate";
 
     document.getElementById("run").onclick = () => {
-        const prompt = isComposeMode ? "Suggest a reply:" : "Summarize this and translate to Traditional Chinese:";
+        const prompt = isComposeMode ? "Follow the instructions and suggest a reply:" : "Summarize this and translate to Traditional Chinese:";
         startAI(prompt);
     };
 
