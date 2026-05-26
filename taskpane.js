@@ -125,9 +125,9 @@ function updateInsertBtn() {
 
 async function callGemini(text, prompt) {
     const key = localStorage.getItem("gemini_key");
-    // const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`;
     // gemini-3.1-flash-lite-preview
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent?key=${key}`;
+    // const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent?key=${key}`;
     const res = await fetch(url, { method: "POST", body: JSON.stringify({ contents: [{ parts: [{ text: prompt + "\n" + text }] }] }) });
     const data = await res.json();
     return data.candidates[0].content.parts[0].text;
